@@ -3,6 +3,7 @@
 #include "arg/adapters.hpp"
 #include "arg/arguments.hpp"
 
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -12,15 +13,16 @@
 
 namespace arg {
 
-struct Config {
-    bool allowKeyValueSyntax = true;
-    std::string keyValueSeparator = "=";
-    bool allowArgumentPacking = true;
-    std::string packPrefix = "-";
-};
-
 class Parser {
 public:
+    struct Config {
+        bool allowKeyValueSyntax = true;
+        std::string keyValueSeparator = "=";
+        bool allowArgumentPacking = true;
+        std::string packPrefix = "-";
+        bool allowUnspecifiedArguments = true;
+    };
+
     void attach(Flag flag)
     {
         _options.push_back(std::make_unique<FlagAdapter>(std::move(flag)));
@@ -59,40 +61,38 @@ public:
             std::make_unique<MultiValueAdapter<T>>(std::move(multiValue)));
     }
 
-    template <class... Ts>
-    Flag flag(Ts&&... keys)
+    Flag flag()
     {
-        return addArgumentWithKeys<Flag>(std::forward<Ts>(keys)...);
+        return makeAndAttach<Flag>();
     }
 
-    template <class... Ts>
-    MultiFlag multiFlag(Ts&&... keys)
+    MultiFlag multiFlag()
     {
-        return addArgumentWithKeys<MultiFlag>(std::forward<Ts>(keys)...);
+        return makeAndAttach<MultiFlag>();
     }
 
-    template <class T, class... Ts>
-    Option<T> option(Ts&&... keys)
+    template <class T>
+    Option<T> option()
     {
-        return addArgumentWithKeys<Option<T>>(std::forward<Ts>(keys)...);
+        return makeAndAttach<Option<T>>();
     }
 
-    template <class T, class... Ts>
-    MultiOption<T> multiOption(Ts&&... keys)
+    template <class T>
+    MultiOption<T> multiOption()
     {
-        return addArgumentWithKeys<MultiOption<T>>(std::forward<Ts>(keys)...);
+        return makeAndAttach<MultiOption<T>>();
     }
 
     template <class T>
     Value<T> argument()
     {
-        return addArgumentWithoutKeys<Value<T>>();
+        return makeAndAttach<Value<T>>();
     }
 
     template <class T>
     MultiValue<T> multiArgument()
     {
-        return addArgumentWithoutKeys<MultiValue<T>>();
+        return makeAndAttach<MultiValue<T>>();
     }
 
     void help(std::ostream& output) const
@@ -182,26 +182,50 @@ public:
             }
 
             if (auto pack = parsePack(*arg); pack) {
-                // ...
+                assert(!pack->keys.empty());
+                for (size_t i = 0; i + 1 < pack->keys.size(); i++) {
+                    auto option = findOption(pack->keys.at(i));
+                    assert(option);
+                    assert(!option->hasArgument());
+                    option->raise();
+                }
+
+                auto lastOption = findOption(pack->keys.back());
+                if (lastOption->hasArgument()) {
+                    if (!pack->leftover.empty()) {
+                        lastOption->addValue(pack->leftover);
+                    } else {
+                        ++arg;
+                        if (arg == args.end()) {
+                            throw std::runtime_error{"no value for " + pack->keys.back()};
+                        }
+                        lastOption->addValue(*arg);
+                    }
+                } else {
+                    lastOption->raise();
+                }
+                ++arg;
                 continue;
             }
 
-            if (_position < _values.size()) {
-                auto value = _values.at(_position);
-                value->addValue(*arg);
-                if (!value->multi()) {
+            if (_position < _arguments.size()) {
+                auto argument = _arguments.at(_position).get();
+                argument->addValue(*arg);
+                if (!argument->multi()) {
                     _position++;
                 }
                 continue;
             }
 
-            if (_collectLevtovers) {
+            if (config.allowUnspecifiedArguments) {
                 _leftovers.push_back(*arg);
             } else {
                 // TODO: push error
             }
         }
     }
+
+    Config config;
 
 private:
     struct KeyValuePair {
@@ -215,29 +239,20 @@ private:
     };
 
     template <class T>
-    T addArgumentWithoutKeys()
+    T makeAndAttach()
     {
         T arg;
-        attach(arg);
-        return arg;
-    }
-
-    template <class T, class... Ts>
-    T addArgumentWithKeys(Ts&&... keys)
-    {
-        T arg;
-        arg.keys(std::forward<Ts>(keys)...);
         attach(arg);
         return arg;
     }
 
     // NOTE: linear search here, probably should replace with something better
     // someday
-    std::unique_ptr<KeyAdapter> findOption(std::string_view key)
+    KeyAdapter* findOption(std::string_view key)
     {
         for (auto it = _options.rbegin(); it != _options.rend(); ++it) {
             if ((*it)->hasKey(key)) {
-                return *it;
+                return it->get();
             }
         }
         return nullptr;
@@ -245,11 +260,11 @@ private:
 
     std::optional<KeyValuePair> parseKeyValue(std::string_view arg)
     {
-        if (!_config.allowKeyValueSyntax) {
+        if (!config.allowKeyValueSyntax) {
             return std::nullopt;
         }
 
-        auto sep = arg.find(_config.keyValueSeparator);
+        auto sep = arg.find(config.keyValueSeparator);
         if (sep == std::string_view::npos) {
             return std::nullopt;
         }
@@ -264,25 +279,37 @@ private:
 
     std::optional<KeyPack> parsePack(std::string_view arg)
     {
-        if (!_config.allowArgumentPacking) {
+        if (!config.allowArgumentPacking) {
             return std::nullopt;
         }
 
-        if (arg.find(_config.packPrefix) != 0) {
+        if (arg.find(config.packPrefix) != 0) {
             return std::nullopt;
         }
 
         KeyPack keyPack;
-        size_t i = _config.packPrefix.length();
+        size_t i = config.packPrefix.length();
         for (; i < arg.length(); i++) {
-        }
+            auto key = config.packPrefix + arg.at(i);
+            auto option = findOption(key);
+            if (!option) {
+                return std::nullopt;
+            }
 
+            keyPack.keys.push_back(key);
+            if (option->hasArgument() && i + 1 < arg.length()) {
+                keyPack.leftover = arg.substr(i + 1);
+                return keyPack;
+            }
+        }
+        return keyPack;
     }
 
     std::vector<std::unique_ptr<KeyAdapter>> _options;
     std::vector<std::unique_ptr<ArgumentAdapter>> _arguments;
+    size_t _position = 0;
+    std::vector<std::string> _leftovers;
     std::string _programName = "<program>";
-    Config _config;
 };
 
 namespace internal {
@@ -292,27 +319,27 @@ inline Parser globalParser;
 } // namespace internal
 
 template <class... Ts>
-Flag flag(Ts&&... keys)
+Flag flag()
 {
-    return internal::globalParser.flag(std::forward<Ts>(keys)...);
+    return internal::globalParser.flag();
 }
 
 template <class... Ts>
-MultiFlag multiFlag(Ts&&... keys)
+MultiFlag multiFlag()
 {
-    return internal::globalParser.multiFlag(std::forward<Ts>(keys)...);
+    return internal::globalParser.multiFlag();
 }
 
 template <class T, class... Ts>
-Option<T> option(Ts&&... keys)
+Option<T> option()
 {
-    return internal::globalParser.option<T>(std::forward<Ts>(keys)...);
+    return internal::globalParser.option<T>();
 }
 
 template <class T, class... Ts>
-MultiOption<T> multiOption(Ts&&... keys)
+MultiOption<T> multiOption()
 {
-    return internal::globalParser.multiOption<T>(std::forward<Ts>(keys)...);
+    return internal::globalParser.multiOption<T>();
 }
 
 template <class T>
@@ -325,6 +352,11 @@ template <class T>
 MultiValue<T> multiArgument()
 {
     return internal::globalParser.multiArgument<T>();
+}
+
+inline void parse(int argc, char** argv)
+{
+    return internal::globalParser.parse(argc, argv);
 }
 
 } // namespace arg

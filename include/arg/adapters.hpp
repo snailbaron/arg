@@ -15,7 +15,7 @@ template <class T>
 T read(std::string_view s)
 {
     auto value = T{};
-    auto stream = std::istringstream{s};
+    auto stream = std::istringstream{std::string{s}};
     while (stream.good()) {
         stream >> value;
     }
@@ -24,6 +24,8 @@ T read(std::string_view s)
 
 class KeyAdapter {
 public:
+    virtual ~KeyAdapter() {}
+
     virtual bool hasArgument() const = 0;
     virtual bool isRequired() const = 0;
     virtual const std::vector<std::string>& keys() const = 0;
@@ -58,9 +60,13 @@ public:
 
 class ArgumentAdapter {
 public:
+    virtual ~ArgumentAdapter() {}
+
     virtual bool isRequired() const = 0;
     virtual std::string metavar() const = 0;
     virtual const std::string& help() const = 0;
+    virtual bool multi() const = 0;
+    virtual void addValue(std::string_view) = 0;
 };
 
 class FlagAdapter : public KeyAdapter {
@@ -247,6 +253,16 @@ public:
         return _value.help();
     }
 
+    bool multi() const override
+    {
+        return false;
+    }
+
+    void addValue(std::string_view s) override
+    {
+        _value = read<T>(s);
+    }
+
 private:
     Value<T> _value;
 };
@@ -270,6 +286,16 @@ class MultiValueAdapter : public ArgumentAdapter {
     const std::string& help() const override
     {
         return _multiValue.help();
+    }
+
+    bool multi() const override
+    {
+        return true;
+    }
+
+    void addValue(std::string_view s) override
+    {
+        _multiValue.push(read<T>(s));
     }
 
 private:

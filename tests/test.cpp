@@ -3,17 +3,22 @@
 
 #include <arg.hpp>
 
+#include <string>
+
 TEST_CASE()
 {
-    auto f = arg::flag("-v")
+    auto f = arg::flag()
+        .keys("-v")
         .help("some flag");
-    auto x = arg::option<int>("-x", "--value")
-        .required()
+    auto x = arg::option<int>()
+        .keys("-x", "--value")
+        .markRequired()
         .help("some value");
-    auto y = arg::option<int>("-y", "--another-value")
-        .def(10)
+    auto y = arg::option<int>()
+        .keys("-y", "--another-value")
+        .defaultValue(10)
         .metavar("SOMETHING")
         .help("another value");
-    auto z = arg::value()
-        .metavar("PATH")
+    auto z = arg::argument<std::string>()
+        .metavar("PATH");
 }

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <istream>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -39,6 +41,11 @@ public:
         return _data->value;
     }
 
+    bool& operator*()
+    {
+        return _data->value;
+    }
+
     operator bool() const
     {
         return **this;
@@ -59,6 +66,16 @@ private:
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
+
+std::ostream& operator<<(std::ostream& output, const Flag& flag)
+{
+    return output << *flag;
+}
+
+std::istream& operator>>(std::istream& input, Flag& flag)
+{
+    return input >> *flag;
+}
 
 class MultiFlag {
 public:
@@ -90,6 +107,11 @@ public:
         return _data->count;
     }
 
+    size_t& operator*()
+    {
+        return _data->count;
+    }
+
     operator size_t() const
     {
         return **this;
@@ -110,6 +132,16 @@ private:
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
+
+std::ostream& operator<<(std::ostream& output, const MultiFlag& multiFlag)
+{
+    return output << *multiFlag;
+}
+
+std::istream& operator>>(std::istream& input, MultiFlag& multiFlag)
+{
+    return input >> *multiFlag;
+}
 
 template <class T>
 class Option {
@@ -170,6 +202,11 @@ public:
         return _data->value;
     }
 
+    T& operator*()
+    {
+        return _data->value;
+    }
+
     operator const T&() const
     {
         return **this;
@@ -192,6 +229,18 @@ private:
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
+
+template <class T>
+std::ostream& operator<<(std::ostream& output, const Option<T>& option)
+{
+    return output << *option;
+}
+
+template <class T>
+std::istream& operator>>(std::istream& input, Option<T>& option)
+{
+    return input >> *option;
+}
 
 template <class T>
 class MultiOption {
@@ -256,6 +305,18 @@ private:
 };
 
 template <class T>
+std::ostream& operator<<(std::ostream& output, const MultiOption<T>& multiOption)
+{
+    return output << *multiOption;
+}
+
+template <class T>
+std::istream& operator>>(std::istream& input, MultiOption<T>& multiOption)
+{
+    return input >> *multiOption;
+}
+
+template <class T>
 class Value {
 public:
     Value help(std::string_view s)
@@ -302,6 +363,11 @@ public:
         return _data->value;
     }
 
+    T& operator*()
+    {
+        return _data->value;
+    }
+
     operator const T&() const
     {
         return **this;
@@ -323,6 +389,18 @@ private:
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
+
+template <class T>
+std::ostream& operator<<(std::ostream& output, const Value<T>& value)
+{
+    return output << *value;
+}
+
+template <class T>
+std::istream& operator>>(std::istream& input, Value<T>& value)
+{
+    return input >> *value;
+}
 
 template <class T>
 class MultiValue {
@@ -373,14 +451,16 @@ private:
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
 
-template <class T> struct is_argument : std::false_type {};
-template <class T> inline constexpr bool is_argument_v = is_argument<T>::value;
+template <class T>
+std::ostream& operator<<(std::ostream& output, const MultiValue<T>& multiValue)
+{
+    return output << *multiValue;
+}
 
-template <> struct is_argument<Flag> : std::true_type {};
-template <> struct is_argument<MultiFlag> : std::true_type {};
-template <class T> struct is_argument<Option<T>> : std::true_type {};
-template <class T> struct is_argument<MultiOption<T>> : std::true_type {};
-template <class T> struct is_argument<Value<T>> : std::true_type {};
-template <class T> struct is_argument<MultiValue<T>> : std::true_type {};
+template <class T>
+std::istream& operator>>(std::istream& input, MultiValue<T>& multiValue)
+{
+    return input >> *multiValue;
+}
 
 } // namespace arg
