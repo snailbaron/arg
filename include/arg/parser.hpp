@@ -2,8 +2,13 @@
 
 #include "arg/adapters.hpp"
 #include "arg/arguments.hpp"
+#include "arg/errors.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -20,7 +25,7 @@ public:
         std::string keyValueSeparator = "=";
         bool allowArgumentPacking = true;
         std::string packPrefix = "-";
-        bool allowUnspecifiedArguments = true;
+        bool allowUnspecifiedArguments = false;
     };
 
     void attach(Flag flag)
@@ -95,7 +100,13 @@ public:
         return makeAndAttach<MultiValue<T>>();
     }
 
-    void help(std::ostream& output) const
+    template <class... Args>
+    void helpKeys(Args&&... args)
+    {
+        _helpKeys = {std::forward<Args>(args)...};
+    }
+
+    void printHelp(std::ostream& output) const
     {
         output << "usage: " << _programName;
         for (const auto& option : _options) {
@@ -119,6 +130,7 @@ public:
                 output << " ]";
             }
         }
+        output << "\n";
 
         if (!_options.empty()) {
             output << "\nOptions:\n";
@@ -143,7 +155,7 @@ public:
     void parse(int argc, char** argv)
     {
         if (argc > 0) {
-            _programName = argv[0];
+            _programName = std::filesystem::path{argv[0]}.filename().string();
         }
 
         std::vector<std::string> args;
@@ -155,12 +167,25 @@ public:
 
     void parse(const std::vector<std::string>& args)
     {
+        std::vector<err::Error> errors;
+        bool helpRequested = false;
+
         for (auto arg = args.begin(); arg != args.end(); ) {
+            if (auto it = std::find(_helpKeys.begin(), _helpKeys.end(), *arg);
+                    it != _helpKeys.end()) {
+                helpRequested = true;
+                ++arg;
+                continue;
+            }
+
             if (auto option = findOption(*arg); option) {
                 if (option->hasArgument()) {
+                    auto givenKey = *arg;
                     ++arg;
                     if (arg == args.end()) {
-                        throw std::runtime_error{"no value for " + *arg};
+                        errors.push_back(
+                            err::RequiredOptionValueNotGiven{givenKey});
+                        continue;
                     }
                     option->addValue(*arg);
                 } else {
@@ -172,10 +197,13 @@ public:
 
             if (auto pair = parseKeyValue(*arg); pair) {
                 if (auto option = findOption(pair->key); option) {
-                    if (!option->hasArgument()) {
-                        throw std::runtime_error{"option does not accept values"};
+                    if (option->hasArgument()) {
+                        option->addValue(pair->value);
+                    } else {
+                        errors.push_back(
+                            err::UnexpectedOptionValueGiven{
+                                pair->key, pair->value});
                     }
-                    option->addValue(pair->value);
                     ++arg;
                     continue;
                 }
@@ -197,7 +225,10 @@ public:
                     } else {
                         ++arg;
                         if (arg == args.end()) {
-                            throw std::runtime_error{"no value for " + pack->keys.back()};
+                            errors.push_back(
+                                err::RequiredOptionValueNotGiven{
+                                    pack->keys.back()});
+                            continue;
                         }
                         lastOption->addValue(*arg);
                     }
@@ -211,6 +242,7 @@ public:
             if (_position < _arguments.size()) {
                 auto argument = _arguments.at(_position).get();
                 argument->addValue(*arg);
+                ++arg;
                 if (!argument->multi()) {
                     _position++;
                 }
@@ -220,8 +252,22 @@ public:
             if (config.allowUnspecifiedArguments) {
                 _leftovers.push_back(*arg);
             } else {
-                // TODO: push error
+                errors.push_back(err::UnexpectedArgument{*arg});
             }
+            ++arg;
+        }
+
+        if (!errors.empty()) {
+            for (const auto& error : errors) {
+                print(std::cerr, error);
+            }
+            printHelp(std::cerr);
+            std::exit(EXIT_FAILURE);
+        }
+
+        if (helpRequested) {
+            printHelp(std::cout);
+            std::exit(EXIT_SUCCESS);
         }
     }
 
@@ -310,6 +356,7 @@ private:
     size_t _position = 0;
     std::vector<std::string> _leftovers;
     std::string _programName = "<program>";
+    std::vector<std::string> _helpKeys;
 };
 
 namespace internal {
@@ -352,6 +399,12 @@ template <class T>
 MultiValue<T> multiArgument()
 {
     return internal::globalParser.multiArgument<T>();
+}
+
+template <class... Args>
+void helpKeys(Args&&... args)
+{
+    internal::globalParser.helpKeys(std::forward<Args>(args)...);
 }
 
 inline void parse(int argc, char** argv)

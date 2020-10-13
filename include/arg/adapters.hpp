@@ -46,7 +46,7 @@ public:
         if (auto it = keys().begin(); it != keys().end()) {
             stream << *it++;
             for (; it != keys().end(); ++it) {
-                stream << " " << *it;
+                stream << ", " << *it;
             }
         }
         return stream.str();

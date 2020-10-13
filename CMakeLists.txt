@@ -25,10 +25,7 @@ if(ARG_PERFORM_ADDITIONAL_CHECKS)
         ",-readability-magic-numbers"
     )
     set(CMAKE_CXX_CLANG_TIDY clang-tidy "-checks=${clang_tidy_checks}")
-
     set(CMAKE_CXX_CPPCHECK "cppcheck")
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
-    set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 endif()
 
 add_library(arg INTERFACE)

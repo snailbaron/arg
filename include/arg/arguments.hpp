@@ -222,7 +222,7 @@ private:
     struct Data {
         std::vector<std::string> keys;
         std::string help;
-        std::string metavar;
+        std::string metavar = "VALUE";
         bool required = false;
         T value = T{};
     };
@@ -297,7 +297,7 @@ private:
     struct Data {
         std::vector<std::string> keys;
         std::string help;
-        std::string metavar;
+        std::string metavar = "VALUE";
         std::vector<T> values;
     };
 
@@ -382,7 +382,7 @@ public:
 private:
     struct Data {
         std::string help;
-        std::string metavar;
+        std::string metavar = "VALUE";
         bool required = false;
         T value = T{};
     };
@@ -444,7 +444,7 @@ public:
 private:
     struct Data {
         std::string help;
-        std::string metavar;
+        std::string metavar = "VALUE";
         std::vector<T> values;
     };
 

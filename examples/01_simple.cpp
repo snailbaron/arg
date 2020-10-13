@@ -5,6 +5,7 @@
 
 int main(int argc, char *argv[])
 {
+    arg::helpKeys("-h", "--help");
     auto string = arg::option<std::string>()
         .keys("-s", "--string")
         .markRequired()
