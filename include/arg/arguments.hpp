@@ -197,6 +197,11 @@ public:
         return *this;
     }
 
+    bool isSet() const
+    {
+        return _data->isSet;
+    }
+
     const T& operator*() const
     {
         return _data->value;
@@ -215,6 +220,7 @@ public:
     Option& operator=(T&& value)
     {
         _data->value = std::forward<T>(value);
+        _data->isSet = true;
         return *this;
     }
 
@@ -225,6 +231,7 @@ private:
         std::string metavar = "VALUE";
         bool required = false;
         T value = T{};
+        bool isSet = false;
     };
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();
@@ -358,6 +365,11 @@ public:
         return *this;
     }
 
+    bool isSet() const
+    {
+        return _data->isSet;
+    }
+
     const T& operator*() const
     {
         return _data->value;
@@ -376,6 +388,7 @@ public:
     Value& operator=(T&& value)
     {
         _data->value = std::forward<T>(value);
+        _data->isSet = true;
         return *this;
     }
 
@@ -385,6 +398,7 @@ private:
         std::string metavar = "VALUE";
         bool required = false;
         T value = T{};
+        bool isSet = false;
     };
 
     std::shared_ptr<Data> _data = std::make_shared<Data>();

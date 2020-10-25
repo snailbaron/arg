@@ -12,14 +12,19 @@
 namespace arg {
 
 template <class T>
-T read(std::string_view s)
+bool read(std::string_view input, T& value)
 {
-    auto value = T{};
-    auto stream = std::istringstream{std::string{s}};
-    while (stream.good()) {
-        stream >> value;
-    }
-    return value;
+    auto stream = std::istringstream{std::string{input}};
+    stream >> value;
+    return !!stream;
+}
+
+bool read(std::string_view input, std::string& string)
+{
+    auto stream = std::istringstream{std::string{input}};
+    // This is probably inefficient.
+    string = {std::istreambuf_iterator<char>(stream), {}};
+    return true;
 }
 
 class KeyAdapter {
@@ -28,12 +33,13 @@ public:
 
     virtual bool hasArgument() const = 0;
     virtual bool isRequired() const = 0;
+    virtual bool isSet() const = 0;
     virtual const std::vector<std::string>& keys() const = 0;
     virtual std::string metavar() const = 0;
     virtual const std::string& help() const = 0;
 
-    virtual void raise() {}
-    virtual void addValue(std::string_view) {}
+    virtual void raise() = 0;
+    virtual bool addValue(std::string_view) = 0;
 
     std::string firstKey() const
     {
@@ -63,10 +69,11 @@ public:
     virtual ~ArgumentAdapter() {}
 
     virtual bool isRequired() const = 0;
+    virtual bool isSet() const = 0;
     virtual std::string metavar() const = 0;
     virtual const std::string& help() const = 0;
     virtual bool multi() const = 0;
-    virtual void addValue(std::string_view) = 0;
+    virtual bool addValue(std::string_view) = 0;
 };
 
 class FlagAdapter : public KeyAdapter {
@@ -85,9 +92,19 @@ public:
         return false;
     }
 
+    bool isSet() const override
+    {
+        throw std::logic_error{"FlagAdapter's isSet() must not be called"};
+    }
+
     void raise() override
     {
         _flag = true;
+    }
+
+    bool addValue(std::string_view) override
+    {
+        throw std::logic_error{"FlagAdapter's addValue must not be called"};
     }
 
     const std::vector<std::string>& keys() const override
@@ -125,9 +142,19 @@ public:
         return false;
     }
 
+    bool isSet() const override
+    {
+        throw std::logic_error{"MultiFlagAdapter's isSet() must not be called"};
+    }
+
     void raise() override
     {
         _multiFlag = true;
+    }
+
+    bool addValue(std::string_view) override
+    {
+        throw std::logic_error{"MultiFlagAdapter's addValue must not be called"};
     }
 
     const std::vector<std::string>& keys() const override
@@ -166,9 +193,25 @@ public:
         return _option.isRequired();
     }
 
-    void addValue(std::string_view s) override
+    bool isSet() const override
     {
-        _option = read<T>(s);
+        return _option.isSet();
+    }
+
+    void raise() override
+    {
+        throw std::logic_error{"OptionAdapter's addValue must not be called"};
+    }
+
+    bool addValue(std::string_view s) override
+    {
+        auto value = T{};
+        if (read(s, value)) {
+            _option = std::move(value);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     const std::vector<std::string>& keys() const override
@@ -207,9 +250,25 @@ public:
         return false;
     }
 
-    void addValue(std::string_view s) override
+    bool isSet() const override
     {
-        _multiOption.push(read<T>(s));
+        throw std::logic_error{"MultiOptionAdapter's isSet() must not be called"};
+    }
+
+    void raise() override
+    {
+        throw std::logic_error{"MultiOptionAdapter's addValue must not be called"};
+    }
+
+    bool addValue(std::string_view s) override
+    {
+        auto value = T{};
+        if (read(s, value)) {
+            _multiOption.push(std::move(value));
+            return true;
+        } else {
+            return false;
+        }
     }
 
     const std::vector<std::string>& keys() const override
@@ -243,6 +302,11 @@ public:
         return _value.isRequired();
     }
 
+    bool isSet() const override
+    {
+        return _value.isSet();
+    }
+
     std::string metavar() const override
     {
         return _value.metavar();
@@ -258,9 +322,15 @@ public:
         return false;
     }
 
-    void addValue(std::string_view s) override
+    bool addValue(std::string_view s) override
     {
-        _value = read<T>(s);
+        auto value = T{};
+        if (read(s, value)) {
+            _value = std::move(value);
+            return true;
+        } else {
+            return false;
+        }
     }
 
 private:
@@ -278,6 +348,11 @@ class MultiValueAdapter : public ArgumentAdapter {
         return _multiValue.isRequired();
     }
 
+    bool isSet() const override
+    {
+        throw std::logic_error{"MultiValueAdapter's isSet() must not be called"};
+    }
+
     std::string metavar() const override
     {
         return _multiValue.metavar();
@@ -293,9 +368,15 @@ class MultiValueAdapter : public ArgumentAdapter {
         return true;
     }
 
-    void addValue(std::string_view s) override
+    bool addValue(std::string_view s) override
     {
-        _multiValue.push(read<T>(s));
+        auto value = T{};
+        if (read(s, value)) {
+            _multiValue.push(std::move(value));
+            return true;
+        } else {
+            return false;
+        }
     }
 
 private:

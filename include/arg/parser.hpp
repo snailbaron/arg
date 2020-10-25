@@ -187,11 +187,16 @@ public:
                             err::RequiredOptionValueNotGiven{givenKey});
                         continue;
                     }
-                    option->addValue(*arg);
+                    if (option->addValue(*arg)) {
+                        ++arg;
+                    } else {
+                        errors.push_back(
+                            err::InvalidValueGiven{option->keyString(), *arg});
+                    }
                 } else {
                     option->raise();
+                    ++arg;
                 }
-                ++arg;
                 continue;
             }
 
@@ -221,7 +226,12 @@ public:
                 auto lastOption = findOption(pack->keys.back());
                 if (lastOption->hasArgument()) {
                     if (!pack->leftover.empty()) {
-                        lastOption->addValue(pack->leftover);
+                        if (!lastOption->addValue(pack->leftover)) {
+                            errors.push_back(
+                                err::InvalidValueGiven{
+                                    pack->keys.back(), pack->leftover});
+                        }
+                        ++arg;
                     } else {
                         ++arg;
                         if (arg == args.end()) {
@@ -230,18 +240,27 @@ public:
                                     pack->keys.back()});
                             continue;
                         }
-                        lastOption->addValue(*arg);
+                        if (lastOption->addValue(*arg)) {
+                            ++arg;
+                        } else {
+                            errors.push_back(
+                                err::InvalidValueGiven{
+                                    pack->keys.back(), *arg});
+                        }
                     }
                 } else {
                     lastOption->raise();
+                    ++arg;
                 }
-                ++arg;
                 continue;
             }
 
             if (_position < _arguments.size()) {
                 auto argument = _arguments.at(_position).get();
-                argument->addValue(*arg);
+                if (!argument->addValue(*arg)) {
+                    errors.push_back(
+                        err::InvalidValueGiven{argument->metavar(), *arg});
+                }
                 ++arg;
                 if (!argument->multi()) {
                     _position++;
@@ -255,6 +274,21 @@ public:
                 errors.push_back(err::UnexpectedArgument{*arg});
             }
             ++arg;
+        }
+
+        if (!helpRequested) {
+            for (const auto& option : _options) {
+                if (option->isRequired() && !option->isSet()) {
+                    errors.push_back(
+                        err::RequiredOptionNotSet{option->keyString()});
+                }
+            }
+            for (const auto& argument : _arguments) {
+                if (argument->isRequired() && !argument->isSet()) {
+                    errors.push_back(
+                        err::RequiredOptionNotSet{argument->metavar()});
+                }
+            }
         }
 
         if (!errors.empty()) {

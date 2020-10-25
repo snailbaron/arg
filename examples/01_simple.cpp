@@ -10,13 +10,13 @@ int main(int argc, char *argv[])
         .keys("-s", "--string")
         .markRequired()
         .help("a string to print");
-    auto number = arg::option<int>()
+    auto number = arg::option<unsigned>()
         .keys("-n", "--number")
         .defaultValue(3)
         .help("number of times to print the string");
     arg::parse(argc, argv);
 
-    for (int i = 0; i < number; i++) {
+    for (unsigned i = 0; i < number; i++) {
         std::cout << string << "\n";
     }
 }
