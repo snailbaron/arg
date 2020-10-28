@@ -106,7 +106,7 @@ public:
         _helpKeys = {std::forward<Args>(args)...};
     }
 
-    void printHelp(std::ostream& output) const
+    void printHelp(std::ostream& output=std::cout) const
     {
         output << "usage: " << _programName;
         for (const auto& option : _options) {

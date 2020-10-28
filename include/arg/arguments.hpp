@@ -212,6 +212,16 @@ public:
         return _data->value;
     }
 
+    const T* operator->() const
+    {
+        return &_data->value;
+    }
+
+    T* operator->()
+    {
+        return &_data->value;
+    }
+
     operator const T&() const
     {
         return **this;
@@ -378,6 +388,16 @@ public:
     T& operator*()
     {
         return _data->value;
+    }
+
+    const T* operator->() const
+    {
+        return &_data->value;
+    }
+
+    T* operator->()
+    {
+        return &_data->value;
     }
 
     operator const T&() const
