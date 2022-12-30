@@ -280,6 +280,17 @@ public:
         return *this;
     }
 
+    MultiOption metavar(std::string_view s)
+    {
+        _data->metavar = s;
+        return *this;
+    }
+
+    [[nodiscard]] const std::string& metavar() const
+    {
+        return _data->metavar;
+    }
+
     [[nodiscard]] const std::string& help() const
     {
         return _data->help;
@@ -308,6 +319,16 @@ public:
     void push(T&& value)
     {
         _data->values.push_back(std::forward<T>(value));
+    }
+
+    const std::vector<T>& vector() const
+    {
+        return _data->values;
+    }
+
+    std::vector<T>& vector()
+    {
+        return _data->values;
     }
 
 private:
@@ -473,6 +494,16 @@ public:
     void push(T&& value)
     {
         _data->values.push_back(std::forward<T>(value));
+    }
+
+    const std::vector<T>& vector() const
+    {
+        return _data->values;
+    }
+
+    std::vector<T>& vector()
+    {
+        return _data->values;
     }
 
 private:

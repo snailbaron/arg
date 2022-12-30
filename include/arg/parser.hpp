@@ -110,23 +110,31 @@ public:
     {
         output << "usage: " << _programName;
         for (const auto& option : _options) {
-            if (!option->isRequired()) {
+            if (option->multi()) {
+                output << " {";
+            } else if (!option->isRequired()) {
                 output << " [";
             }
             output << " " << option->firstKey();
             if (option->hasArgument()) {
                 output << " " << option->metavar();
             }
-            if (!option->isRequired()) {
+            if (option->multi()) {
+                output << " }";
+            } else if (!option->isRequired()) {
                 output << " ]";
             }
         }
         for (const auto& argument : _arguments) {
-            if (!argument->isRequired()) {
+            if (argument->multi()) {
+                output << " {";
+            } else if (!argument->isRequired()) {
                 output << " [";
             }
             output << " " << argument->metavar();
-            if (!argument->isRequired()) {
+            if (argument->multi()) {
+                output << " }";
+            } else if (!argument->isRequired()) {
                 output << " ]";
             }
         }

@@ -37,6 +37,7 @@ public:
     [[nodiscard]] virtual const std::vector<std::string>& keys() const = 0;
     [[nodiscard]] virtual std::string metavar() const = 0;
     [[nodiscard]] virtual const std::string& help() const = 0;
+    [[nodiscard]] virtual bool multi() const = 0;
 
     virtual void raise() = 0;
     virtual bool addValue(std::string_view) = 0;
@@ -94,7 +95,7 @@ public:
 
     [[nodiscard]] bool isSet() const override
     {
-        throw std::logic_error{"FlagAdapter's isSet() must not be called"};
+        throw std::logic_error{"FlagAdapter's isSet must not be called"};
     }
 
     void raise() override
@@ -122,6 +123,11 @@ public:
         return _flag.help();
     }
 
+    [[nodiscard]] bool multi() const override
+    {
+        return false;
+    }
+
 private:
     Flag _flag;
 };
@@ -144,7 +150,7 @@ public:
 
     [[nodiscard]] bool isSet() const override
     {
-        throw std::logic_error{"MultiFlagAdapter's isSet() must not be called"};
+        throw std::logic_error{"MultiFlagAdapter's isSet must not be called"};
     }
 
     void raise() override
@@ -170,6 +176,11 @@ public:
     [[nodiscard]] const std::string& help() const override
     {
         return _multiFlag.help();
+    }
+
+    [[nodiscard]] bool multi() const override
+    {
+        return true;
     }
 
 private:
@@ -200,7 +211,7 @@ public:
 
     void raise() override
     {
-        throw std::logic_error{"OptionAdapter's addValue must not be called"};
+        throw std::logic_error{"OptionAdapter's raise must not be called"};
     }
 
     bool addValue(std::string_view s) override
@@ -228,6 +239,11 @@ public:
         return _option.help();
     }
 
+    [[nodiscard]] bool multi() const override
+    {
+        return false;
+    }
+
 private:
     Option<T> _option;
 };
@@ -251,12 +267,12 @@ public:
 
     [[nodiscard]] bool isSet() const override
     {
-        throw std::logic_error{"MultiOptionAdapter's isSet() must not be called"};
+        throw std::logic_error{"MultiOptionAdapter's isSet must not be called"};
     }
 
     void raise() override
     {
-        throw std::logic_error{"MultiOptionAdapter's addValue must not be called"};
+        throw std::logic_error{"MultiOptionAdapter's raise must not be called"};
     }
 
     bool addValue(std::string_view s) override
@@ -282,6 +298,11 @@ public:
     [[nodiscard]] const std::string& help() const override
     {
         return _multiOption.help();
+    }
+
+    [[nodiscard]] bool multi() const override
+    {
+        return true;
     }
 
 private:
@@ -347,7 +368,7 @@ class MultiValueAdapter : public ArgumentAdapter {
 
     [[nodiscard]] bool isSet() const override
     {
-        throw std::logic_error{"MultiValueAdapter's isSet() must not be called"};
+        throw std::logic_error{"MultiValueAdapter's isSet must not be called"};
     }
 
     [[nodiscard]] std::string metavar() const override
