@@ -19,7 +19,7 @@ bool read(std::string_view input, T& value)
     return !!stream;
 }
 
-bool read(std::string_view input, std::string& string)
+inline bool read(std::string_view input, std::string& string)
 {
     auto stream = std::istringstream{std::string{input}};
     // This is probably inefficient.
@@ -29,24 +29,24 @@ bool read(std::string_view input, std::string& string)
 
 class KeyAdapter {
 public:
-    virtual ~KeyAdapter() {}
+    virtual ~KeyAdapter() = default;
 
-    virtual bool hasArgument() const = 0;
-    virtual bool isRequired() const = 0;
-    virtual bool isSet() const = 0;
-    virtual const std::vector<std::string>& keys() const = 0;
-    virtual std::string metavar() const = 0;
-    virtual const std::string& help() const = 0;
+    [[nodiscard]] virtual bool hasArgument() const = 0;
+    [[nodiscard]] virtual bool isRequired() const = 0;
+    [[nodiscard]] virtual bool isSet() const = 0;
+    [[nodiscard]] virtual const std::vector<std::string>& keys() const = 0;
+    [[nodiscard]] virtual std::string metavar() const = 0;
+    [[nodiscard]] virtual const std::string& help() const = 0;
 
     virtual void raise() = 0;
     virtual bool addValue(std::string_view) = 0;
 
-    std::string firstKey() const
+    [[nodiscard]] std::string firstKey() const
     {
         return keys().empty() ? "<no key>" : keys().front();
     }
 
-    std::string keyString() const
+    [[nodiscard]] std::string keyString() const
     {
         std::ostringstream stream;
         if (auto it = keys().begin(); it != keys().end()) {
@@ -58,7 +58,7 @@ public:
         return stream.str();
     }
 
-    bool hasKey(std::string_view s) const
+    [[nodiscard]] bool hasKey(std::string_view s) const
     {
         return std::find(keys().begin(), keys().end(), s) != keys().end();
     }
@@ -66,33 +66,33 @@ public:
 
 class ArgumentAdapter {
 public:
-    virtual ~ArgumentAdapter() {}
+    virtual ~ArgumentAdapter() = default;
 
-    virtual bool isRequired() const = 0;
-    virtual bool isSet() const = 0;
-    virtual std::string metavar() const = 0;
-    virtual const std::string& help() const = 0;
-    virtual bool multi() const = 0;
+    [[nodiscard]] virtual bool isRequired() const = 0;
+    [[nodiscard]] virtual bool isSet() const = 0;
+    [[nodiscard]] virtual std::string metavar() const = 0;
+    [[nodiscard]] virtual const std::string& help() const = 0;
+    [[nodiscard]] virtual bool multi() const = 0;
     virtual bool addValue(std::string_view) = 0;
 };
 
 class FlagAdapter : public KeyAdapter {
 public:
-    FlagAdapter(Flag&& flag)
+    explicit FlagAdapter(Flag&& flag)
         : _flag(std::move(flag))
     { }
 
-    bool hasArgument() const override
+    [[nodiscard]] bool hasArgument() const override
     {
         return false;
     }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return false;
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         throw std::logic_error{"FlagAdapter's isSet() must not be called"};
     }
@@ -107,17 +107,17 @@ public:
         throw std::logic_error{"FlagAdapter's addValue must not be called"};
     }
 
-    const std::vector<std::string>& keys() const override
+    [[nodiscard]] const std::vector<std::string>& keys() const override
     {
         return _flag.keys();
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return "";
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _flag.help();
     }
@@ -128,21 +128,21 @@ private:
 
 class MultiFlagAdapter : public KeyAdapter {
 public:
-    MultiFlagAdapter(MultiFlag multiFlag)
+    explicit MultiFlagAdapter(MultiFlag multiFlag)
         : _multiFlag(std::move(multiFlag))
     { }
 
-    bool hasArgument() const override
+    [[nodiscard]] bool hasArgument() const override
     {
         return false;
     }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return false;
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         throw std::logic_error{"MultiFlagAdapter's isSet() must not be called"};
     }
@@ -157,17 +157,17 @@ public:
         throw std::logic_error{"MultiFlagAdapter's addValue must not be called"};
     }
 
-    const std::vector<std::string>& keys() const override
+    [[nodiscard]] const std::vector<std::string>& keys() const override
     {
         return _multiFlag.keys();
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return "";
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _multiFlag.help();
     }
@@ -179,21 +179,21 @@ private:
 template <class T>
 class OptionAdapter : public KeyAdapter {
 public:
-    OptionAdapter(Option<T>&& option)
+    explicit OptionAdapter(Option<T>&& option)
         : _option(std::move(option))
     { }
 
-    bool hasArgument() const override
+    [[nodiscard]] bool hasArgument() const override
     {
         return true;
     }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return _option.isRequired();
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         return _option.isSet();
     }
@@ -209,22 +209,21 @@ public:
         if (read(s, value)) {
             _option = std::move(value);
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    const std::vector<std::string>& keys() const override
+    [[nodiscard]] const std::vector<std::string>& keys() const override
     {
         return _option.keys();
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return _option.metavar();
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _option.help();
     }
@@ -236,21 +235,21 @@ private:
 template <class T>
 class MultiOptionAdapter : public KeyAdapter {
 public:
-    MultiOptionAdapter(MultiOption<T>&& multiOption)
+    explicit MultiOptionAdapter(MultiOption<T>&& multiOption)
         : _multiOption(std::move(multiOption))
     { }
 
-    bool hasArgument() const override
+    [[nodiscard]] bool hasArgument() const override
     {
         return true;
     }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return false;
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         throw std::logic_error{"MultiOptionAdapter's isSet() must not be called"};
     }
@@ -266,22 +265,21 @@ public:
         if (read(s, value)) {
             _multiOption.push(std::move(value));
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    const std::vector<std::string>& keys() const override
+    [[nodiscard]] const std::vector<std::string>& keys() const override
     {
         return _multiOption.keys();
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return _multiOption.metavar();
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _multiOption.help();
     }
@@ -293,31 +291,31 @@ private:
 template <class T>
 class ValueAdapter : public ArgumentAdapter {
 public:
-    ValueAdapter(Value<T>&& value)
+    explicit ValueAdapter(Value<T>&& value)
         : _value(std::move(value))
     { }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return _value.isRequired();
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         return _value.isSet();
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return _value.metavar();
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _value.help();
     }
 
-    bool multi() const override
+    [[nodiscard]] bool multi() const override
     {
         return false;
     }
@@ -328,9 +326,8 @@ public:
         if (read(s, value)) {
             _value = std::move(value);
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
 private:
@@ -339,31 +336,31 @@ private:
 
 template <class T>
 class MultiValueAdapter : public ArgumentAdapter {
-    MultiValueAdapter(MultiValue<T>&& multiValue)
+    explicit MultiValueAdapter(MultiValue<T>&& multiValue)
         : _multiValue(std::move(multiValue))
     { }
 
-    bool isRequired() const override
+    [[nodiscard]] bool isRequired() const override
     {
         return _multiValue.isRequired();
     }
 
-    bool isSet() const override
+    [[nodiscard]] bool isSet() const override
     {
         throw std::logic_error{"MultiValueAdapter's isSet() must not be called"};
     }
 
-    std::string metavar() const override
+    [[nodiscard]] std::string metavar() const override
     {
         return _multiValue.metavar();
     }
 
-    const std::string& help() const override
+    [[nodiscard]] const std::string& help() const override
     {
         return _multiValue.help();
     }
 
-    bool multi() const override
+    [[nodiscard]] bool multi() const override
     {
         return true;
     }
@@ -374,9 +371,8 @@ class MultiValueAdapter : public ArgumentAdapter {
         if (read(s, value)) {
             _multiValue.push(std::move(value));
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
 private:

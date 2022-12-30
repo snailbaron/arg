@@ -20,7 +20,7 @@ public:
         return *this;
     }
 
-    const std::vector<std::string>& keys() const
+    [[nodiscard]] const std::vector<std::string>& keys() const
     {
         return _data->keys;
     }
@@ -31,7 +31,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }
@@ -67,12 +67,12 @@ private:
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
 
-std::ostream& operator<<(std::ostream& output, const Flag& flag)
+inline std::ostream& operator<<(std::ostream& output, const Flag& flag)
 {
     return output << *flag;
 }
 
-std::istream& operator>>(std::istream& input, Flag& flag)
+inline std::istream& operator>>(std::istream& input, Flag& flag)
 {
     return input >> *flag;
 }
@@ -86,7 +86,7 @@ public:
         return *this;
     }
 
-    const std::vector<std::string>& keys() const
+    [[nodiscard]] const std::vector<std::string>& keys() const
     {
         return _data->keys;
     }
@@ -97,7 +97,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }
@@ -133,12 +133,12 @@ private:
     std::shared_ptr<Data> _data = std::make_shared<Data>();
 };
 
-std::ostream& operator<<(std::ostream& output, const MultiFlag& multiFlag)
+inline std::ostream& operator<<(std::ostream& output, const MultiFlag& multiFlag)
 {
     return output << *multiFlag;
 }
 
-std::istream& operator>>(std::istream& input, MultiFlag& multiFlag)
+inline std::istream& operator>>(std::istream& input, MultiFlag& multiFlag)
 {
     return input >> *multiFlag;
 }
@@ -153,7 +153,7 @@ public:
         return *this;
     }
 
-    const std::vector<std::string>& keys() const
+    [[nodiscard]] const std::vector<std::string>& keys() const
     {
         return _data->keys;
     }
@@ -164,7 +164,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }
@@ -175,7 +175,7 @@ public:
         return *this;
     }
 
-    const std::string& metavar() const
+    [[nodiscard]] const std::string& metavar() const
     {
         return _data->metavar;
     }
@@ -186,7 +186,7 @@ public:
         return *this;
     }
 
-    bool isRequired() const
+    [[nodiscard]] bool isRequired() const
     {
         return _data->required;
     }
@@ -197,7 +197,7 @@ public:
         return *this;
     }
 
-    bool isSet() const
+    [[nodiscard]] bool isSet() const
     {
         return _data->isSet;
     }
@@ -269,7 +269,7 @@ public:
         return *this;
     }
 
-    const std::vector<std::string>& keys() const
+    [[nodiscard]] const std::vector<std::string>& keys() const
     {
         return _data->keys;
     }
@@ -280,7 +280,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }
@@ -342,7 +342,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }
@@ -353,7 +353,7 @@ public:
         return *this;
     }
 
-    const std::string& metavar() const
+    [[nodiscard]] const std::string& metavar() const
     {
         return _data->metavar;
     }
@@ -364,7 +364,7 @@ public:
         return *this;
     }
 
-    bool isRequired() const
+    [[nodiscard]] bool isRequired() const
     {
         return _data->required;
     }
@@ -375,7 +375,7 @@ public:
         return *this;
     }
 
-    bool isSet() const
+    [[nodiscard]] bool isSet() const
     {
         return _data->isSet;
     }
@@ -445,7 +445,7 @@ public:
         return *this;
     }
 
-    const std::string& help() const
+    [[nodiscard]] const std::string& help() const
     {
         return _data->help;
     }

@@ -160,7 +160,7 @@ public:
 
         std::vector<std::string> args;
         for (int i = 1; i < argc; i++) {
-            args.push_back(argv[i]);
+            args.emplace_back(argv[i]);
         }
         parse(args);
     }
@@ -178,19 +178,19 @@ public:
                 continue;
             }
 
-            if (auto option = findOption(*arg); option) {
+            if (auto* option = findOption(*arg); option) {
                 if (option->hasArgument()) {
                     auto givenKey = *arg;
                     ++arg;
                     if (arg == args.end()) {
-                        errors.push_back(
+                        errors.emplace_back(
                             err::RequiredOptionValueNotGiven{givenKey});
                         continue;
                     }
                     if (option->addValue(*arg)) {
                         ++arg;
                     } else {
-                        errors.push_back(
+                        errors.emplace_back(
                             err::InvalidValueGiven{option->keyString(), *arg});
                     }
                 } else {
@@ -201,11 +201,11 @@ public:
             }
 
             if (auto pair = parseKeyValue(*arg); pair) {
-                if (auto option = findOption(pair->key); option) {
+                if (auto* option = findOption(pair->key); option) {
                     if (option->hasArgument()) {
                         option->addValue(pair->value);
                     } else {
-                        errors.push_back(
+                        errors.emplace_back(
                             err::UnexpectedOptionValueGiven{
                                 pair->key, pair->value});
                     }
@@ -216,18 +216,19 @@ public:
 
             if (auto pack = parsePack(*arg); pack) {
                 assert(!pack->keys.empty());
+
                 for (size_t i = 0; i + 1 < pack->keys.size(); i++) {
-                    auto option = findOption(pack->keys.at(i));
+                    auto* option = findOption(pack->keys.at(i));
                     assert(option);
                     assert(!option->hasArgument());
                     option->raise();
                 }
 
-                auto lastOption = findOption(pack->keys.back());
+                auto* lastOption = findOption(pack->keys.back());
                 if (lastOption->hasArgument()) {
                     if (!pack->leftover.empty()) {
                         if (!lastOption->addValue(pack->leftover)) {
-                            errors.push_back(
+                            errors.emplace_back(
                                 err::InvalidValueGiven{
                                     pack->keys.back(), pack->leftover});
                         }
@@ -235,7 +236,7 @@ public:
                     } else {
                         ++arg;
                         if (arg == args.end()) {
-                            errors.push_back(
+                            errors.emplace_back(
                                 err::RequiredOptionValueNotGiven{
                                     pack->keys.back()});
                             continue;
@@ -243,7 +244,7 @@ public:
                         if (lastOption->addValue(*arg)) {
                             ++arg;
                         } else {
-                            errors.push_back(
+                            errors.emplace_back(
                                 err::InvalidValueGiven{
                                     pack->keys.back(), *arg});
                         }
@@ -256,9 +257,9 @@ public:
             }
 
             if (_position < _arguments.size()) {
-                auto argument = _arguments.at(_position).get();
+                auto* argument = _arguments.at(_position).get();
                 if (!argument->addValue(*arg)) {
-                    errors.push_back(
+                    errors.emplace_back(
                         err::InvalidValueGiven{argument->metavar(), *arg});
                 }
                 ++arg;
@@ -271,7 +272,7 @@ public:
             if (config.allowUnspecifiedArguments) {
                 _leftovers.push_back(*arg);
             } else {
-                errors.push_back(err::UnexpectedArgument{*arg});
+                errors.emplace_back(err::UnexpectedArgument{*arg});
             }
             ++arg;
         }
@@ -279,13 +280,13 @@ public:
         if (!helpRequested) {
             for (const auto& option : _options) {
                 if (option->isRequired() && !option->isSet()) {
-                    errors.push_back(
+                    errors.emplace_back(
                         err::RequiredOptionNotSet{option->keyString()});
                 }
             }
             for (const auto& argument : _arguments) {
                 if (argument->isRequired() && !argument->isSet()) {
-                    errors.push_back(
+                    errors.emplace_back(
                         err::RequiredOptionNotSet{argument->metavar()});
                 }
             }
@@ -338,7 +339,7 @@ private:
         return nullptr;
     }
 
-    std::optional<KeyValuePair> parseKeyValue(std::string_view arg)
+    [[nodiscard]] std::optional<KeyValuePair> parseKeyValue(std::string_view arg) const
     {
         if (!config.allowKeyValueSyntax) {
             return std::nullopt;
@@ -371,7 +372,7 @@ private:
         size_t i = config.packPrefix.length();
         for (; i < arg.length(); i++) {
             auto key = config.packPrefix + arg.at(i);
-            auto option = findOption(key);
+            auto* option = findOption(key);
             if (!option) {
                 return std::nullopt;
             }
