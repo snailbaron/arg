@@ -400,25 +400,23 @@ inline Parser globalParser;
 
 } // namespace internal
 
-template <class... Ts>
-Flag flag()
+inline Flag flag()
 {
     return internal::globalParser.flag();
 }
 
-template <class... Ts>
-MultiFlag multiFlag()
+inline MultiFlag multiFlag()
 {
     return internal::globalParser.multiFlag();
 }
 
-template <class T, class... Ts>
+template <class T>
 Option<T> option()
 {
     return internal::globalParser.option<T>();
 }
 
-template <class T, class... Ts>
+template <class T>
 MultiOption<T> multiOption()
 {
     return internal::globalParser.multiOption<T>();
