@@ -213,8 +213,7 @@ public:
                     if (option->hasArgument()) {
                         option->addValue(pair->value);
                     } else {
-                        errors.emplace_back(
-                            err::UnexpectedOptionValueGiven{
+                        errors.emplace_back(err::UnexpectedOptionValueGiven{
                                 pair->key, pair->value});
                     }
                     ++arg;
@@ -236,9 +235,8 @@ public:
                 if (lastOption->hasArgument()) {
                     if (!pack->leftover.empty()) {
                         if (!lastOption->addValue(pack->leftover)) {
-                            errors.emplace_back(
-                                err::InvalidValueGiven{
-                                    pack->keys.back(), pack->leftover});
+                            errors.emplace_back(err::InvalidValueGiven{
+                                pack->keys.back(), pack->leftover});
                         }
                         ++arg;
                     } else {
@@ -252,8 +250,7 @@ public:
                         if (lastOption->addValue(*arg)) {
                             ++arg;
                         } else {
-                            errors.emplace_back(
-                                err::InvalidValueGiven{
+                            errors.emplace_back(err::InvalidValueGiven{
                                     pack->keys.back(), *arg});
                         }
                     }
@@ -347,7 +344,8 @@ private:
         return nullptr;
     }
 
-    [[nodiscard]] std::optional<KeyValuePair> parseKeyValue(std::string_view arg) const
+    [[nodiscard]]
+    std::optional<KeyValuePair> parseKeyValue(std::string_view arg) const
     {
         if (!config.allowKeyValueSyntax) {
             return std::nullopt;
