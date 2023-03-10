@@ -16,6 +16,7 @@ endif()
 
 add_library(arg INTERFACE)
 target_include_directories(arg INTERFACE "${PROJECT_SOURCE_DIR}/include")
+set_target_properties (arg PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
 if(ARG_BUILD_EXAMPLES)
     add_subdirectory(examples)
