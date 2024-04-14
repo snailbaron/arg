@@ -357,13 +357,14 @@ private:
 
 template <class T>
 class MultiValueAdapter : public ArgumentAdapter {
+public:
     explicit MultiValueAdapter(MultiValue<T>&& multiValue)
         : _multiValue(std::move(multiValue))
     { }
 
     [[nodiscard]] bool isRequired() const override
     {
-        return _multiValue.isRequired();
+        return false;
     }
 
     [[nodiscard]] bool isSet() const override

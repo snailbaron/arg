@@ -471,24 +471,35 @@ public:
         return _data->help;
     }
 
+    MultiValue metavar(std::string_view s)
+    {
+        _data->metavar = s;
+        return *this;
+    }
+
+    [[nodiscard]] const std::string& metavar() const
+    {
+        return _data->metavar;
+    }
+
     auto begin() const
     {
-        return _data->value.begin();
+        return _data->values.begin();
     }
 
     auto begin()
     {
-        return _data->value.begin();
+        return _data->values.begin();
     }
 
     auto end() const
     {
-        return _data->value.end();
+        return _data->values.end();
     }
 
     auto end()
     {
-        return _data->value.end();
+        return _data->values.end();
     }
 
     void push(T&& value)

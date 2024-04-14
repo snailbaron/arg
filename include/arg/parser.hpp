@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <ranges>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -56,7 +57,8 @@ public:
     template <class T>
     void attach(Value<T> value)
     {
-        _arguments.push_back(std::make_unique<ValueAdapter<T>>(std::move(value)));
+        _arguments.push_back(
+            std::make_unique<ValueAdapter<T>>(std::move(value)));
     }
 
     template <class T>
@@ -173,7 +175,7 @@ public:
         parse(args);
     }
 
-    void parse(const std::vector<std::string>& args)
+    void parse(std::ranges::range auto&& args)
     {
         std::vector<err::Error> errors;
         bool helpRequested = false;
@@ -311,6 +313,11 @@ public:
         }
     }
 
+    const std::vector<std::string>& leftovers() const
+    {
+        return _leftovers;
+    }
+
     Config config;
 
 private:
@@ -446,9 +453,19 @@ void helpKeys(Args&&... args)
     internal::globalParser.helpKeys(std::forward<Args>(args)...);
 }
 
+inline void printHelp(std::ostream& output = std::cout)
+{
+    internal::globalParser.printHelp(output);
+}
+
 inline void parse(int argc, char** argv)
 {
     return internal::globalParser.parse(argc, argv);
+}
+
+inline const std::vector<std::string>& leftovers()
+{
+    return internal::globalParser.leftovers();
 }
 
 } // namespace arg

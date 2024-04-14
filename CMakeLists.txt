@@ -5,7 +5,7 @@ project(arg)
 set(ARG_BUILD_TESTS TRUE CACHE BOOL "Build tests for arg library")
 set(ARG_BUILD_EXAMPLES TRUE CACHE BOOL "Build examples for arg library")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
